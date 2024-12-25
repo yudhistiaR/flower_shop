@@ -1,101 +1,124 @@
-import Image from "next/image";
+"use client";
+
+import { Button, TextField, Typography } from "@mui/material";
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import AuthView from "@/components/AuthView";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [data, setData] = useState({
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState({
+    email: "",
+    password: "",
+    default: "",
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const path = useRouter();
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    await fetch("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json();
+
+          setIsError(true);
+          if (error?.name === "ZodError") {
+            const zodIssue = error.issues[0];
+            setErrorMessage((prev) => ({
+              ...prev,
+              email: zodIssue.message,
+            }));
+          } else {
+            setErrorMessage({ default: error.message });
+          }
+
+          setTimeout(() => {
+            setIsError(false);
+            setErrorMessage({});
+          }, 5000);
+        } else {
+          path.push("/home");
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+        clearTimeout();
+      });
+  };
+
+  const onChange = (e) => {
+    setData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  return (
+    <AuthView>
+      <div className="space-y-5">
+        <div>
+          <Typography variant="h4" component="div">
+            Welcome Back!
+          </Typography>
+          <Typography variant="h4" component="div">
+            Login to your account
+          </Typography>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Typography variant="p" component="div">
+          {"It's nice to see you again. Ready to shoping?"}
+        </Typography>
+      </div>
+      <form onSubmit={onSubmit} className="space-y-5 my-5">
+        <TextField
+          onChange={onChange}
+          name="email"
+          fullWidth
+          label="Email"
+          type="text"
+          size="small"
+          disabled={loading}
+          defaultValue={data.email}
+          helperText={errorMessage.email}
+          error={isError}
+          required
+          autoComplete="off"
+        />
+        <TextField
+          onChange={onChange}
+          name="password"
+          fullWidth
+          label="Password"
+          type="password"
+          size="small"
+          disabled={loading}
+          defaultValue={data.password}
+          helperText={errorMessage.default}
+          error={isError}
+          required
+          autoComplete="off"
+        />
+        <Button
+          disabled={loading}
+          type="submit"
+          fullWidth
+          color="error"
+          variant="contained"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          Login
+        </Button>
+      </form>
+      <Typography fullWidth variant="p" component="div">
+        {"Don't have an account?"} <Link href="/register">Sign up</Link>
+      </Typography>
+    </AuthView>
   );
 }
